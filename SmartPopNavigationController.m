@@ -52,6 +52,14 @@ typedef void(^PopCompletionBlock)();
     return nil;
 }
 
+- (NSArray *) popViewControllerAnimated:(BOOL) animated completion:(void (^)()) completion tillRoot:(BOOL) tillRoot
+{
+    return [self transitViewControllerAnimated:animated
+                                    completion:completion
+                                        action:tillRoot?TransitPopTillRoot:TransitPopViewController
+                                      targetVC:nil];
+}
+
 - (NSArray *) transitViewControllerAnimated:(BOOL) animated completion:(void (^)()) completion action:(UINavigationControllerTransition) action targetVC:(UIViewController *) targetVC
 {
     if (self.delegate) {
