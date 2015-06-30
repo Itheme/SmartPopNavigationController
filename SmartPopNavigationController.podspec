@@ -16,7 +16,7 @@ Pod::Spec.new do |s|
   #
 
   s.name         = "SmartPopNavigationController"
-  s.version      = "0.1.1"
+  s.version      = "0.1.2"
   s.summary      = "UINavigation controller that could perform several immediate pops/pushes without breaking stuff"
 
   s.description  = <<-DESC
@@ -76,7 +76,7 @@ Pod::Spec.new do |s|
   #  Supports git, hg, bzr, svn and HTTP.
   #
 
-  s.source       = { :git => "https://github.com/Itheme/SmartPopNavigationController.git", :tag => "0.1.1" }
+  s.source       = { :git => "https://github.com/Itheme/SmartPopNavigationController.git", :tag => "0.1.2" }
 
 
   # ――― Source Code ―――――――――――――――――――――――――――――――――――――――――――――――――――――――――――――― #
