@@ -12,6 +12,7 @@
 
 - (NSArray *) popViewControllerAnimated:(BOOL) animated completion:(void (^)()) completion tillRoot:(BOOL) tillRoot; // array of controllers in case of popping to root, or one controller array if just single pop
 - (UIViewController *) popViewControllerAnimated:(BOOL) animated;
+- (void)pushViewController:(UIViewController *)viewController animated:(BOOL)animated;
 - (SmartPopNavigationController *) deepestSmartPopNavigationController;
 
 @end

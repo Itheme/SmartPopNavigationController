@@ -8,12 +8,19 @@
 
 #import "SmartPopNavigationController.h"
 
+typedef enum : NSUInteger {
+    TransitPopViewController = 0,
+    TransitPopTillRoot = 1,
+    TransitPush = 2,
+} UINavigationControllerTransition;
+
 typedef void(^PopCompletionBlock)();
 
 @interface SmartPopNavigationController () <UINavigationControllerDelegate>
 
 @property (nonatomic, strong) NSMutableArray *completionBlocks;
 @property (nonatomic, weak) id<UINavigationControllerDelegate>escalatedDelegate;
+@property (nonatomic) BOOL pushing;
 
 @end
 
@@ -45,7 +52,7 @@ typedef void(^PopCompletionBlock)();
     return nil;
 }
 
-- (NSArray *) popViewControllerAnimated:(BOOL) animated completion:(void (^)()) completion tillRoot:(BOOL) tillRoot
+- (NSArray *) transitViewControllerAnimated:(BOOL) animated completion:(void (^)()) completion action:(UINavigationControllerTransition) action targetVC:(UIViewController *) targetVC
 {
     if (self.delegate) {
         if (![self.delegate isEqual:self]) {
@@ -55,24 +62,29 @@ typedef void(^PopCompletionBlock)();
     } else {
         self.delegate = self;
     }
-    NSDictionary *info;
+    NSMutableDictionary *info = [@{@"animated": @(animated), @"action": @(action), @"target": self} mutableCopy];
     if (completion) {
-        info = @{@"completion": completion, @"animated": @(animated), @"root": @(tillRoot), @"target": self};
-    } else {
-        info = @{@"animated": @(animated), @"root": @(tillRoot), @"target": self};
+        info[@"completion"] = completion;
+    }
+    if (targetVC) {
+        info[@"ViewController"] = targetVC;
     }
     SmartPopNavigationController *deepest = [self deepestSmartPopNavigationController];
     if (deepest.completionBlocks && (deepest.completionBlocks.count > 0)) {
         [deepest.completionBlocks addObject:info];
         return nil;
     } else {
+        if (action == TransitPush) {
+            [super pushViewController:targetVC animated:animated];
+            return nil;
+        }
         if (self.viewControllers.count == 1) {
             if (completion)
                 completion();
             return nil;
         }
         deepest.completionBlocks = [NSMutableArray arrayWithObject:info];
-        if (tillRoot) {
+        if (action == TransitPopTillRoot) {
             return [super popToRootViewControllerAnimated:animated];
         }
         return [self superPopViewControllerAnimated:animated];
@@ -81,12 +93,12 @@ typedef void(^PopCompletionBlock)();
 
 - (UIViewController *) popViewControllerAnimated:(BOOL)animated
 {
-    return [[self popViewControllerAnimated:animated completion:nil tillRoot:NO] firstObject];
+    return [[self transitViewControllerAnimated:animated completion:nil action:TransitPopViewController targetVC:nil] firstObject];
 }
 
 - (NSArray *)popToRootViewControllerAnimated:(BOOL)animated
 {
-    return [self popViewControllerAnimated:animated completion:nil tillRoot:YES];
+    return [self transitViewControllerAnimated:animated completion:nil action:TransitPopTillRoot targetVC:nil];
 }
 
 #pragma mark - UINavigationControllerDelegate methods
@@ -128,10 +140,18 @@ typedef void(^PopCompletionBlock)();
                 }
             } else {
                 BOOL animated = [info[@"animated"] boolValue];
-                if ([info[@"root"] boolValue]) {
-                    [target superPopToRootViewControllerAnimated:animated];
-                } else {
-                    [target superPopViewControllerAnimated:animated];
+                switch ([info[@"action"] integerValue]) {
+                    case TransitPopTillRoot:
+                        [target superPopToRootViewControllerAnimated:animated];
+                        break;
+                    case TransitPopViewController:
+                        [target superPopViewControllerAnimated:animated];
+                        break;
+                    case TransitPush:
+                        [target pushViewController:info[@"ViewController"] animated:animated];
+                        break;
+                    default:
+                        break;
                 }
             }
         }
@@ -143,6 +163,11 @@ typedef void(^PopCompletionBlock)();
     if (self.escalatedDelegate && [self.escalatedDelegate respondsToSelector:@selector(navigationController:willShowViewController:animated:)]) {
         [self.escalatedDelegate navigationController:navigationController willShowViewController:viewController animated:animated];
     }
+}
+
+- (void)pushViewController:(UIViewController *)viewController animated:(BOOL)animated
+{
+    [self transitViewControllerAnimated:animated completion:nil action:TransitPush targetVC:viewController];
 }
 
 //- (NSUInteger)navigationControllerSupportedInterfaceOrientations:(UINavigationController *)navigationController
